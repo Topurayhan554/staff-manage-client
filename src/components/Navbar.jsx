@@ -1,8 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import { ChevronDown } from "lucide-react";
+import { AuthContext } from "../context/AuthContext";
+import { toast } from "react-toastify";
+import { Link } from "react-router";
 
 const Navbar = () => {
   const [userDropdown, setUserDropdown] = useState(false);
+  const { user, logOut } = useContext(AuthContext);
+
+  const handleLogOut = () => {
+    logOut()
+      .then(() => {
+        toast.success("Logged out successfully");
+      })
+      .catch((error) => {
+        console.log(error);
+        toast.error("Logout failed");
+      });
+  };
 
   return (
     <div>
@@ -16,93 +31,132 @@ const Navbar = () => {
 
           {/* Middle - Navigation Links */}
           <div className="hidden md:flex items-center gap-8">
-            <a
-              href="#home"
+            <Link
+              to={"/"}
               className="text-gray-700 hover:text-orange-600 font-medium transition-colors"
             >
               Home
-            </a>
-            <a
-              href="#dashboard"
+            </Link>
+            <Link
+              to={"/dashboard"}
               className="text-gray-700 hover:text-orange-600 font-medium transition-colors"
             >
               Dashboard
-            </a>
-            <a
-              href="#about"
+            </Link>
+            <Link
+              to={"/about"}
               className="text-gray-700 hover:text-orange-600 font-medium transition-colors"
             >
               About
-            </a>
+            </Link>
           </div>
 
-          {/* Right - User Profile */}
+          {/* Right - User/Profile */}
           <div className="relative">
-            <div
-              onClick={() => setUserDropdown(!userDropdown)}
-              className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
-            >
-              <div className="hidden sm:block">
-                <div className="text-sm font-medium text-gray-900 text-right">
-                  Asif Roja
+            {user ? (
+              <div
+                onClick={() => setUserDropdown(!userDropdown)}
+                className="flex items-center gap-3 cursor-pointer hover:bg-gray-50 px-3 py-2 rounded-lg transition-colors"
+              >
+                <div className="hidden sm:block text-right">
+                  <div className="text-sm font-medium text-gray-900">
+                    {user.displayName || "User"}
+                  </div>
                 </div>
-                <div className="text-xs text-gray-500">Admin</div>
+                <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center bg-gray-300">
+                  {user.photoURL ? (
+                    <img
+                      src={user.photoURL}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white font-semibold">
+                      {user.displayName
+                        ? user.displayName.slice(0, 2).toUpperCase()
+                        : "U"}
+                    </span>
+                  )}
+                </div>
+                <ChevronDown
+                  className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${
+                    userDropdown ? "rotate-180" : ""
+                  }`}
+                />
               </div>
-              <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold">
-                AR
+            ) : (
+              <div className="flex items-center gap-2">
+                <Link
+                  to="/login"
+                  className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors"
+                >
+                  Login
+                </Link>
+                <Link
+                  to="/register"
+                  className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+                >
+                  Register
+                </Link>
               </div>
-              <ChevronDown
-                className={`w-4 h-4 text-gray-600 transition-transform duration-200 ${
-                  userDropdown ? "rotate-180" : ""
-                }`}
-              />
-            </div>
+            )}
 
             {/* User Dropdown */}
-            {userDropdown && (
+            {userDropdown && user && (
               <div className="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-lg border border-gray-200 py-2">
                 <div className="px-4 py-3 border-b border-gray-200">
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-blue-500 rounded-full flex items-center justify-center text-white font-semibold text-lg">
-                      AR
+                    <div className="w-12 h-12 rounded-full overflow-hidden bg-gray-300 flex items-center justify-center text-white font-semibold text-lg">
+                      {user.photoURL ? (
+                        <img
+                          src={user.photoURL}
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      ) : user.displayName ? (
+                        user.displayName.slice(0, 2).toUpperCase()
+                      ) : (
+                        "U"
+                      )}
                     </div>
                     <div>
                       <div className="font-semibold text-gray-900">
-                        Asif Roja
+                        {user.displayName || "User"}
                       </div>
-                      <div className="text-sm text-gray-500">
-                        asif@nebs-it.com
-                      </div>
+                      <div className="text-sm text-gray-500">{user.email}</div>
                     </div>
                   </div>
                 </div>
 
                 <div className="py-2">
-                  <a
-                    href="#profile"
+                  <Link
+                    to="/profile"
                     className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-gray-700"
                   >
                     <span className="text-lg">👤</span>
                     <span>My Profile</span>
-                  </a>
-                  <a
-                    href="#settings"
+                  </Link>
+                  <Link
+                    to="/settings"
                     className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-gray-700"
                   >
                     <span className="text-lg">⚙️</span>
                     <span>Settings</span>
-                  </a>
-                  <a
-                    href="#help"
+                  </Link>
+                  <Link
+                    to="/help"
                     className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 text-gray-700"
                   >
                     <span className="text-lg">❓</span>
                     <span>Help & Support</span>
-                  </a>
+                  </Link>
                 </div>
 
                 <div className="border-t border-gray-200 pt-2">
-                  <button className="flex items-center gap-3 px-4 py-2 hover:bg-red-50 text-red-600 w-full text-left">
+                  <button
+                    onClick={handleLogOut}
+                    className="flex items-center gap-3 px-4 py-2 hover:bg-red-50 text-red-600 w-full text-left"
+                  >
                     <span className="text-lg">🚪</span>
                     <span className="font-medium">Logout</span>
                   </button>
