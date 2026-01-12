@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import {
   ChevronDown,
   X,
@@ -10,111 +10,57 @@ import {
   Eye,
   Edit,
   MoreVertical,
-  Search,
   Filter,
-  Download,
-  UserPlus,
+  PencilLine,
 } from "lucide-react";
 import { Link } from "react-router";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { AuthContext } from "../../context/AuthContext";
+import useAxiosSecure from "../../hooks/useAxiosSecure";
+import toast from "react-hot-toast";
 
 const EmployeeDatabase = () => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [employeeDropdown, setEmployeeDropdown] = useState(false);
-  const [careerDropdown, setCareerDropdown] = useState(false);
-  const [userDropdown, setUserDropdown] = useState(false);
-  const [activePath, setActivePath] = useState("/notice-board");
   const [selectedNotices, setSelectedNotices] = useState([]);
+  const [openDropdownId, setOpenDropdownId] = useState(null);
 
-  // Notice Data
-  const [notices] = useState([
-    {
-      id: 1,
-      title: "Office closed on Friday for maintenance.",
-      type: "General / Company News",
-      department: "All Department",
-      publishedOn: "15-Jun-2025",
-      status: "Published",
-    },
-    {
-      id: 2,
-      title: "Eid al-Fitr holiday schedule.",
-      type: "Holiday & Event",
-      department: "Finance",
-      publishedOn: "15-Jun-2025",
-      status: "Published",
-    },
-    {
-      id: 3,
-      title: "Updated code of conduct policy.",
-      type: "HR & Policy Update",
-      department: "Sales Team",
-      publishedOn: "15-Jun-2025",
-      status: "Published",
-      hasAlert: true,
-    },
-    {
-      id: 4,
-      title: "Payroll for October will be processed on 28th.",
-      type: "Finance & Payroll",
-      department: "Web Team",
-      publishedOn: "15-Jun-2025",
-      status: "Published",
-      subStatus: "Published",
-    },
-    {
-      id: 5,
-      title: "System update scheduled for 30 Oct 10:30-11:00 PM.",
-      type: "IT / System Maintenance",
-      department: "Database Team",
-      publishedOn: "15-Jun-2025",
-      status: "Published",
-      hasToggle: true,
-    },
-    {
-      id: 6,
-      title: "Design team sprint review moved to Tuesday.",
-      type: "Department / Team",
-      department: "Admin",
-      publishedOn: "15-Jun-2025",
-      status: "Published",
-    },
-    {
-      id: 7,
-      title: "Unauthorized absence recorded on 18 Oct 2025",
-      type: "Warning / Disciplinary",
-      department: "Individual",
-      publishedOn: "15-Jun-2025",
-      status: "Unpublished",
-    },
-    {
-      id: 8,
-      title: "Office closed today due to severe weather",
-      type: "Emergency / Urgent",
-      department: "HR",
-      publishedOn: "15-Jun-2025",
-      status: "Draft",
-      subStatus: "Unpublished",
-      hasToggle: true,
-    },
-  ]);
+  const { user } = useContext(AuthContext);
+  const axiosSecure = useAxiosSecure();
+  const queryClient = useQueryClient();
 
-  const handleMenuClick = (path) => {
-    setActivePath(path);
-    setSidebarOpen(false);
-    console.log("Navigating to:", path);
+  // Fetch notices
+  const { data: notices = [] } = useQuery({
+    queryKey: ["myNotices"],
+    queryFn: async () => {
+      const res = await axiosSecure.get("/notices");
+      return res.data;
+    },
+  });
+
+  // Toggle status mutation
+  const toggleStatusMutation = useMutation({
+    mutationFn: async (noticeId) => {
+      const res = await axiosSecure.patch(`/notices/${noticeId}/toggle-status`);
+      return res.data;
+    },
+  });
+
+  const handleToggleStatus = (noticeId) => {
+    toggleStatusMutation.mutate(noticeId);
   };
 
-  const isActive = (path) => activePath === path;
-
-  const isParentActive = (subItems) => {
-    return subItems?.some((item) => activePath === item.path);
+  const handleEditClick = (noticeId) => {
+    if (openDropdownId === noticeId) {
+      setOpenDropdownId(null); // close if already open
+    } else {
+      setOpenDropdownId(noticeId); // open dropdown
+    }
   };
 
   const toggleSelectAll = () => {
     if (selectedNotices.length === notices.length) {
       setSelectedNotices([]);
     } else {
-      setSelectedNotices(notices.map((n) => n.id));
+      setSelectedNotices(notices.map((n) => n._id));
     }
   };
 
@@ -141,74 +87,106 @@ const EmployeeDatabase = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Main Content */}
-
-      <div className="p-4 md:p-6">
-        {/* Page Header */}
-        <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
-            Notice Management
-          </h1>
-          <div className="text-sm">
-            <span className="text-blue-600 font-medium">Active Notices: 8</span>
-            <span className="text-gray-400 mx-2">|</span>
-            <span className="text-amber-600">Draft Notices: 04</span>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Header */}
+        <div className="mb-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">
+              Notice Management
+            </h1>
+            <p className="mt-1 text-sm text-[#00A46E]">
+              Active Notices: {notices.length} |{" "}
+              <span className="text-[#FFA307]">Draft Notices: 4</span>
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              to={"/dashboard/notice-board"}
+              className="inline-flex items-center px-4 py-2 bg-[#F95524] text-white rounded-lg hover:bg-green-600 transition-colors font-medium text-sm"
+            >
+              + Create Notice
+            </Link>
+            <button className="inline-flex gap-2 items-center text-[#F59E0B] px-4 py-2 bg-white border border-[#F59E0B] rounded-lg hover:bg-gray-50 transition-colors font-medium text-sm">
+              <PencilLine /> All Draft Notice
+            </button>
           </div>
         </div>
 
-        {/* Action Bar */}
-        <div>
-          <div className="p-4 flex justify-end">
-            <div className="flex flex-col sm:flex-row gap-3">
-              <Link
-                to={"/dashboard/notice-board"}
-                className="px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 flex items-center justify-center gap-2"
+        {/* Filters */}
+        <div className="p-4 mb-6">
+          {/* Filter Section - All in one line */}
+          <div className="flex items-end gap-3">
+            {/* Filter by label */}
+            <div className="flex items-center gap-2 pb-2">
+              <Filter className="w-5 h-5 text-gray-500" />
+              <span className="font-medium text-gray-700 whitespace-nowrap">
+                Filter by:
+              </span>
+            </div>
+
+            {/* Departments or Individuals */}
+            <div className="flex-1 min-w-[200px]">
+              <select className="w-full px-3 py-2 border border-gray-300 text-gray-500 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option value="">Departments or Individuals</option>
+                <option value="All Departments">All Departments</option>
+                <option value="HR Department">HR Department</option>
+                <option value="Finance Department">Finance Department</option>
+                <option value="IT Department">IT Department</option>
+                <option value="Sales Department">Sales Department</option>
+              </select>
+            </div>
+
+            {/* Employee Id or Name */}
+            <div className="flex-1 min-w-[200px]">
+              <input
+                type="text"
+                placeholder="Employee Id or Name"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Status */}
+            <div className="flex-1 min-w-[150px]">
+              <select className="w-full px-3 py-2 text-gray-500 border  border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <option>Status</option>
+                <option>Published</option>
+                <option>Unpublished</option>
+                <option>Draft</option>
+              </select>
+            </div>
+
+            {/* Published on */}
+            <div className="flex-1 min-w-[180px]">
+              <input
+                type="date"
+                placeholder="Published on"
+                className="w-full px-3 py-2 text-gray-500 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* Reset Filter Button */}
+            <div className="min-w-[140px]">
+              <label className="block text-sm font-medium text-gray-700 mb-1 invisible">
+                Action
+              </label>
+              <button
+                onClick={() => {}}
+                className="w-full px-3 py-2 text-gray-500 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
-                + Create Notice
-              </Link>
-              <button className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-2">
-                📝 All Draft Notice
+                Reset Filter
               </button>
             </div>
           </div>
+        </div>
 
-          {/* Filters */}
-          <div className="my-5 flex justify-end">
-            <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
-              <span className="text-sm text-gray-600">Filter by:</span>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:flex gap-3 w-full lg:w-auto">
-                <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                  <option>Departments or Individuals</option>
-                  <option>All Departments</option>
-                  <option>HR</option>
-                  <option>Finance</option>
-                </select>
-
-                <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                  <option>Employee Id or Name</option>
-                </select>
-
-                <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm">
-                  <option>Status</option>
-                  <option>Published</option>
-                  <option>Unpublished</option>
-                  <option>Draft</option>
-                </select>
-
-                <button className="px-3 py-2 border border-gray-300 rounded-lg text-sm flex items-center justify-center gap-2">
-                  Published on
-                </button>
-              </div>
-            </div>
-          </div>
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 mb-6">
-            {/* Table */}
+        {/* Table */}
+        <div>
+          <div className="bg-white border border-gray-300 rounded-lg shadow-sm overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1000px]">
-                <thead className="bg-gray-50 border-b border-gray-200">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left w-12">
+                    <th className="px-6 py-3 text-left">
                       <input
                         type="checkbox"
                         checked={selectedNotices.length === notices.length}
@@ -216,93 +194,120 @@ const EmployeeDatabase = () => {
                         className="rounded"
                       />
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Title
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Notice Type
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Departments/Individual
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Published On
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
-                    <th className="px-6 py-3 text-left text-xs font-semibold text-gray-600 uppercase">
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Actions
                     </th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="bg-white divide-y divide-gray-200">
                   {notices.map((notice) => (
-                    <tr key={notice.id} className="hover:bg-gray-50">
+                    <tr key={notice._id} className="hover:bg-gray-50">
                       <td className="px-6 py-4">
                         <input
                           type="checkbox"
-                          checked={selectedNotices.includes(notice.id)}
-                          onChange={() => toggleSelect(notice.id)}
+                          checked={selectedNotices.includes(notice._id)}
+                          onChange={() => toggleSelect(notice._id)}
                           className="rounded"
                         />
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        {notice.title}
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900">
+                          {notice.title}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {notice.type}
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-gray-500">
+                          {notice.noticeType}
+                        </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           {notice.hasAlert && (
-                            <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                            <span className="text-red-500">🔔</span>
                           )}
-                          <span className="text-sm text-blue-600">
+                          <span className="text-sm text-gray-500">
                             {notice.department}
                           </span>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-sm text-gray-600">
-                        {notice.publishedOn}
-                      </td>
                       <td className="px-6 py-4">
-                        <div className="flex flex-col gap-1">
-                          <span
-                            className={`px-3 py-1 rounded-full text-xs font-medium inline-block w-fit ${getStatusColor(
-                              notice.status
-                            )}`}
-                          >
-                            {notice.status}
-                          </span>
-                          {notice.subStatus && (
-                            <span className="text-xs text-gray-500">
-                              {notice.subStatus}
-                            </span>
-                          )}
+                        <div className="text-sm text-gray-500">
+                          {notice.publishDate}
                         </div>
                       </td>
                       <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <button className="p-2 hover:bg-gray-100 rounded">
-                            <Eye className="w-4 h-4 text-gray-600" />
+                        <span
+                          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(
+                            notice.status
+                          )}`}
+                        >
+                          {notice.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-3 relative">
+                          <button className="text-gray-400 hover:text-gray-600">
+                            <Eye className="w-5 h-5" />
                           </button>
-                          <button className="p-2 hover:bg-gray-100 rounded">
-                            <Edit className="w-4 h-4 text-gray-600" />
+
+                          {/* Edit button with dropdown */}
+                          <button
+                            className="text-gray-400 hover:text-gray-600 relative"
+                            onClick={() => handleEditClick(notice._id)}
+                          >
+                            <Edit className="w-5 h-5" />
+
+                            {openDropdownId === notice._id && (
+                              <div className="absolute bottom-full mb-1 right-0 z-10 w-36 bg-white border rounded shadow p-2 flex gap-3 items-center justify-between">
+                                {/* Status text */}
+                                <span className="text-sm font-medium text-gray-700">
+                                  {notice.status}
+                                </span>
+
+                                {/* Toggle button */}
+                                <button
+                                  onClick={() => handleToggleStatus(notice._id)}
+                                  disabled={toggleStatusMutation.isPending}
+                                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                                    notice.status === "Published"
+                                      ? "bg-blue-600"
+                                      : "bg-gray-700"
+                                  } ${
+                                    toggleStatusMutation.isPending
+                                      ? "opacity-50 cursor-not-allowed"
+                                      : ""
+                                  }`}
+                                >
+                                  <span
+                                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                                      notice.status === "Published"
+                                        ? "translate-x-6"
+                                        : "translate-x-1"
+                                    }`}
+                                  />
+                                </button>
+                              </div>
+                            )}
                           </button>
-                          <button className="p-2 hover:bg-gray-100 rounded">
-                            <MoreVertical className="w-4 h-4 text-gray-600" />
+
+                          <button className="text-gray-400 hover:text-gray-600">
+                            <MoreVertical className="w-5 h-5" />
                           </button>
-                          {notice.hasToggle && (
-                            <label className="relative inline-flex items-center cursor-pointer">
-                              <input
-                                type="checkbox"
-                                className="sr-only peer"
-                                defaultChecked={notice.id === 5}
-                              />
-                              <div className="w-9 h-5 bg-gray-300 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-green-500"></div>
-                            </label>
-                          )}
                         </div>
                       </td>
                     </tr>
@@ -311,33 +316,31 @@ const EmployeeDatabase = () => {
               </table>
             </div>
           </div>
+        </div>
 
-          {/* Pagination */}
-          <div className="p-4 flex flex-col sm:flex-row justify-center items-center gap-3 border-t border-gray-200">
-            <div className="flex gap-2">
-              <button className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">
-                ←
-              </button>
-              <button className="px-3 py-1 bg-orange-500 text-white rounded">
-                1
-              </button>
-              <button className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">
-                2
-              </button>
-              <button className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">
-                3
-              </button>
-              <button className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">
-                4
-              </button>
-              <button className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">
-                5
-              </button>
-              <button className="px-3 py-1 border border-gray-300 rounded hover:bg-gray-50">
-                →
-              </button>
-            </div>
-          </div>
+        {/* Pagination */}
+        <div className="mt-6 flex items-center justify-center gap-2">
+          <button className="px-3 py-1 text-gray-600 hover:bg-gray-100 rounded">
+            ←
+          </button>
+          <button className="px-3 py-1 bg-blue-600 text-white rounded">
+            1
+          </button>
+          <button className="px-3 py-1 text-gray-600 hover:bg-gray-100 rounded">
+            2
+          </button>
+          <button className="px-3 py-1 text-gray-600 hover:bg-gray-100 rounded">
+            3
+          </button>
+          <button className="px-3 py-1 text-gray-600 hover:bg-gray-100 rounded">
+            4
+          </button>
+          <button className="px-3 py-1 text-gray-600 hover:bg-gray-100 rounded">
+            5
+          </button>
+          <button className="px-3 py-1 text-gray-600 hover:bg-gray-100 rounded">
+            →
+          </button>
         </div>
       </div>
     </div>

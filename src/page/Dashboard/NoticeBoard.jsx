@@ -8,6 +8,7 @@ const NoticeBoard = () => {
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm();
 
@@ -31,6 +32,7 @@ const NoticeBoard = () => {
       console.log("after saving", res.data);
     });
     setShowSuccessModal(true);
+    reset();
   };
   const [showSuccessModal, setShowSuccessModal] = useState(false);
 
@@ -46,28 +48,6 @@ const NoticeBoard = () => {
     attachments: [],
   });
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
-
-  const handleFileUpload = (e) => {
-    const files = Array.from(e.target.files);
-    setFormData((prev) => ({
-      ...prev,
-      attachments: [...prev.attachments, ...files],
-    }));
-  };
-
-  const removeFile = (index) => {
-    setFormData((prev) => ({
-      ...prev,
-      attachments: prev.attachments.filter((_, i) => i !== index),
-    }));
-  };
   const handlePublish = () => {
     // console.log("Publishing notice:", formData);
     setShowSuccessModal(true);
@@ -230,12 +210,12 @@ const NoticeBoard = () => {
               </label>
               <div className="relative">
                 <input
+                  type="date"
                   required
                   {...register("publishDate")}
                   placeholder="Select Publishing Date"
-                  className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
+                  className="w-full px-3 py-2  border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-sm"
                 />
-                <Calendar className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
               </div>
             </div>
           </div>
@@ -265,6 +245,7 @@ const NoticeBoard = () => {
                 type="file"
                 required
                 multiple
+                id="file-upload"
                 {...register("file")}
                 className="hidden"
                 accept=".pdf,.jpg,.png"
@@ -284,33 +265,6 @@ const NoticeBoard = () => {
                 </div>
               </label>
             </div>
-
-            {/* Uploaded Files List */}
-            {formData.attachments.length > 0 && (
-              <div className="mt-3 space-y-2">
-                {formData.attachments.map((file, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between px-3 py-2 bg-gray-50 rounded-lg border border-gray-200"
-                  >
-                    <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 bg-red-100 rounded flex items-center justify-center">
-                        <span className="text-xs text-red-600 font-semibold">
-                          📄
-                        </span>
-                      </div>
-                      <span className="text-sm text-gray-700">{file.name}</span>
-                    </div>
-                    <button
-                      onClick={() => removeFile(index)}
-                      className="p-1 hover:bg-gray-200 rounded transition-colors"
-                    >
-                      <X className="w-4 h-4 text-gray-500" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
 
           {/* Action Buttons */}
