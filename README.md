@@ -1,16 +1,64 @@
-# React + Vite
+# Nebs-IT HR Portal
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+**Live Demo**
 
-Currently, two official plugins are available:
+- **Client:** [https://staff-manage-client.vercel.app/](https://staff-manage-client.vercel.app/)
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+- **Server:** [https://staff-manage-server.vercel.app/](https://staff-manage-server.vercel.app/)
 
-## React Compiler
+---
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Project Overview
 
-## Expanding the ESLint configuration
+Nebs-IT HR Portal is a modern, responsive web application designed to simplify HR management processes for organizations. It allows administrators to manage employees, notices, and other HR operations from a single dashboard. The application provides detailed statistics, easy navigation, and quick access to important HR features.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+### Key Features
+
+- Employee management (Add, edit, view, performance tracking)
+- Notice board (Publish, edit, and manage notices)
+- Activity log for monitoring recent changes
+- Responsive UI with modern design and color palette
+- Dashboard with stats cards for quick insights
+- Filters, search, and pagination for large datasets
+
+---
+
+## Tech Stack
+
+### Frontend
+
+- **React.js** (v18+)
+- **Tailwind CSS** for styling
+- **React Router** for page navigation
+- **React Hook Form** for forms and validation
+- **React Query / TanStack Query** for data fetching and caching
+- **Lucide Icons** for modern SVG icons
+- **React Hot Toast** for notifications
+
+### Backend
+
+- **Node.js** with Express.js
+- **MongoDB** for database
+- **Axios** for API requests
+- **CORS & Middleware** for security and request handling
+- **JWT Authentication** for user login/logout
+
+### Tools & Libraries
+
+- **Vite** (frontend bundler)
+- **React Context API** for authentication state
+- **Postman** for API testing
+
+---
+
+## Installation
+
+### 1. Clone the Repository
+
+#### Frontend
+
+```bash
+git clone https://github.com/Topurayhan554/staff-manage-client.git
+cd staff-manage-client
+npm install
+```
